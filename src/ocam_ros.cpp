@@ -1,12 +1,10 @@
 #include "ocam_ros.h"
 
-
-oCam_ROS::oCam_ROS() :
-    nh_(),
-    nh_private_("~"),
-    it_(nh_),
-    info_manager_(nh_, "ocam"),
-    auto_exposure_count_(0)
+oCam_ROS::oCam_ROS() : nh_(),
+                       nh_private_("~"),
+                       it_(nh_),
+                       info_manager_(nh_, "ocam"),
+                       auto_exposure_count_(0)
 {
     initROS();
     initCamera();
@@ -38,7 +36,8 @@ void oCam_ROS::run()
         int size = camera_->get_frame(srcImg->data, camFormat_.image_size, 1);
         now_ = ros::Time::now();
 
-        if (size == -1 && errno) {
+        if (size == -1 && errno)
+        {
             ROS_ERROR("Missed an image from camera");
             camera_->stop();
             camera_->start();
@@ -46,8 +45,8 @@ void oCam_ROS::run()
         }
         cv::cvtColor(*srcImg, *dstImg, (color_ ? cv::COLOR_BayerGB2BGR : cv::COLOR_BayerGB2GRAY));
 
-//        if (auto_exposure_)
-//            autoExposure();
+        //        if (auto_exposure_)
+        //            autoExposure();
         if (show_image_)
             showImage();
 
@@ -97,8 +96,8 @@ void oCam_ROS::initROS()
 void oCam_ROS::initCamera()
 {
     camera_ = new Withrobot::Camera(device_path_.c_str());
-    camera_->set_format(width_, height_, Withrobot::fourcc_to_pixformat('G','R', 'E', 'Y'), 1, fps_);
-//    camera_->set_format(width_, height_, Withrobot::fourcc_to_pixformat('R', 'G', 'B', ' '), 1, fps_);
+    camera_->set_format(width_, height_, Withrobot::fourcc_to_pixformat('G', 'R', 'E', 'Y'), 1, fps_);
+    //    camera_->set_format(width_, height_, Withrobot::fourcc_to_pixformat('R', 'G', 'B', ' '), 1, fps_);
     camera_->get_current_format(camFormat_);
 
     camera_->set_control("Gain", brightness_);
@@ -120,7 +119,6 @@ void oCam_ROS::initCamera()
     ROS_INFO("Frame Rate : %d / %d (%.2f fps)", camFormat_.rate_numerator, camFormat_.rate_denominator, camFormat_.frame_rate);
     ROS_INFO("---------------------------------------------------------------");
 
-
     if (info_manager_.validateURL(cam_info_url_))
     {
         info_manager_.loadCameraInfo(cam_info_url_);
@@ -141,7 +139,7 @@ void oCam_ROS::initCV()
 
     if (show_image_)
     {
-        cv::namedWindow("oCam ROS", CV_WINDOW_KEEPRATIO|CV_WINDOW_AUTOSIZE);
+        cv::namedWindow("oCam ROS", cv::WINDOW_KEEPRATIO | cv::WINDOW_AUTOSIZE);
 
         ROS_INFO("<--------- oCam Adjustment -------->");
         ROS_INFO("Quit adjustment and image view: q");
@@ -160,19 +158,19 @@ void oCam_ROS::initCV()
 
 void oCam_ROS::autoExposure()
 {
-    if ((++auto_exposure_count_ % (fps_/80)) == 0)
+    if ((++auto_exposure_count_ % (fps_ / 80)) == 0)
     {
         auto_exposure_count_ = 0;
         // secant method for finding exposure at target intensity
         static float intensity_min = 18;
         static float exposure_min = 1;
-        static float target_intensity = 128; // 8 bit image is 0-255
+        static float target_intensity = 128;        // 8 bit image is 0-255
         float intensity = cv::mean(*dstImg).val[0]; // mean intensity
-        float exposure_new = ((exposure_ - exposure_min)*(target_intensity - intensity_min))/(intensity - intensity_min) + exposure_min;
+        float exposure_new = ((exposure_ - exposure_min) * (target_intensity - intensity_min)) / (intensity - intensity_min) + exposure_min;
 
         // LPF the exposure to prevent large jumps inducing oscillations
         static float alpha = 0.7;
-        exposure_ = int(alpha*exposure_ + (1-alpha)*exposure_new);
+        exposure_ = int(alpha * exposure_ + (1 - alpha) * exposure_new);
 
         // saturate exposure at its limits
         if (exposure_ > 625)
@@ -214,9 +212,7 @@ void oCam_ROS::updateCamInfo()
     info_.header.frame_id = frame_id_;
 }
 
-
-
-// Rescaling taken from cv_camera package. See http://wiki.ros.org/cv_camera for ROS 
+// Rescaling taken from cv_camera package. See http://wiki.ros.org/cv_camera for ROS
 // package info and https://github.com/OTL/cv_camera for source.
 void oCam_ROS::rescaleCameraInfo(int width, int height)
 {
@@ -329,8 +325,7 @@ oCam_ROS::~oCam_ROS()
     delete dstImg;
 }
 
-
-int main(int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "ocam_ros_node");
     oCam_ROS thing;
